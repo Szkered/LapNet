@@ -64,7 +64,7 @@ class MakeLocalEnergy(Protocol):
     """
 
 
-def get_sdgd_idx_set(key, dim, n_sdgd_dim=16):
+def get_sdgd_idx_set(key, dim, n_sdgd_dim=1):
   if n_sdgd_dim != 0:
     idx_set = jax.random.choice(key, dim, shape=(n_sdgd_dim, ), replace=False)
   else:
@@ -76,31 +76,26 @@ def get_random_vec(
   key,
   idx_set,
   dim,
-  n_sdgd_dim=8,
+  n_vec=1,
   method="sdgd",
-  n_hte_vec=0,
 ):
   """Return a random vector on sdgd sampled dimensions, with Rademacher
   distribution.
 
   If with_time, add a one-hot time dimension at the end.
   """
-  d = n_sdgd_dim or dim
   if method == "normal":  # HTE
-    rand_vec = jax.random.normal(key, shape=(n_hte_vec, d))
+    rand_vec = jax.random.normal(key, shape=(n_vec, dim))
   elif method == "unit":  # HTE
     rand_vec = 2 * (
-      jax.random.randint(key, shape=(n_hte_vec, d), minval=0, maxval=2) - 0.5
+      jax.random.randint(key, shape=(n_vec, dim), minval=0, maxval=2) - 0.5
     )
   elif method == "sdgd":
+    idx_set = get_sdgd_idx_set(key, dim, n_vec)
     rand_vec = jax.vmap(lambda i: jnp.eye(dim)[i])(idx_set) * dim
   else:
     raise ValueError
   return rand_vec
-  # n_vec = n_hte_vec
-  # d = dim
-  # rand_sub_vec = jnp.zeros((n_vec, d)).at[:n_hte_vec, idx_set].set(rand_vec)
-  # return rand_sub_vec
 
 
 def local_kinetic_energy(
@@ -125,8 +120,10 @@ def local_kinetic_energy(
 
   def _randomized_lapl_over_f(params, data, rng):
     dim = data.shape[0]
-    idx_set = get_sdgd_idx_set(rng, dim)
-    rand_sub_vec = get_random_vec(rng, idx_set, dim)
+
+    n_vec = 3
+    idx_set = get_sdgd_idx_set(rng, dim, n_vec)
+    rand_sub_vec = get_random_vec(rng, idx_set, dim, n_vec)
 
     f_partial = partial(f, params)
     taylor_2 = lambda v: jet.jet(

@@ -102,7 +102,12 @@ def slogdet(x):
     sign = jnp.sign(x[..., 0, 0])
     logdet = jnp.log(jnp.abs(x[..., 0, 0]))
   else:
-    sign, logdet = jnp.linalg.slogdet(x)
+    # TODO: add jet support for QR/LU
+    # sign, logdet = jnp.linalg.slogdet(x)
+    # NOTE: this is numerically unstable
+    # logdet = jnp.log(jnp.linalg.det(x)+1e-1)
+    logdet = jnp.linalg.det(x)
+    sign = jnp.sign(x[..., 0, 0])
 
   return sign, logdet
 
