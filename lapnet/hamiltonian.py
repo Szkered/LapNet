@@ -76,9 +76,9 @@ def get_random_vec(
   key,
   idx_set,
   dim,
-  n_sdgd_dim=0,
+  n_sdgd_dim=8,
   method="sdgd",
-  n_hte_vec=16,
+  n_hte_vec=0,
 ):
   """Return a random vector on sdgd sampled dimensions, with Rademacher
   distribution.
@@ -96,10 +96,11 @@ def get_random_vec(
     rand_vec = jax.vmap(lambda i: jnp.eye(dim)[i])(idx_set) * dim
   else:
     raise ValueError
-  n_vec = n_hte_vec
-  d = dim
-  rand_sub_vec = jnp.zeros((n_vec, d)).at[:n_hte_vec, idx_set].set(rand_vec)
-  return rand_sub_vec
+  return rand_vec
+  # n_vec = n_hte_vec
+  # d = dim
+  # rand_sub_vec = jnp.zeros((n_vec, d)).at[:n_hte_vec, idx_set].set(rand_vec)
+  # return rand_sub_vec
 
 
 def local_kinetic_energy(
@@ -128,10 +129,10 @@ def local_kinetic_energy(
     rand_sub_vec = get_random_vec(rng, idx_set, dim)
 
     f_partial = partial(f, params)
-    taylor_2 = lambda i: jet.jet(
+    taylor_2 = lambda v: jet.jet(
       fun=f_partial,
-      primals=(data, ),
-      series=((jnp.eye(dim)[i], jnp.zeros(dim)), ),
+      primals=(data,),
+      series=((v, jnp.zeros(dim)),),
     )
     _, (_, hvps) = jax.vmap(taylor_2)(rand_sub_vec)
     trace_est = jnp.mean(hvps)
@@ -163,10 +164,10 @@ def local_kinetic_energy(
     return result - 0.5 * jnp.sum(primal**2)
 
   if forward_laplacian:
-    # return _randomized_lapl_over_f
     return _forward_lapl_over_f
   else:
-    return _lapl_over_f
+    return _randomized_lapl_over_f
+    # return _lapl_over_f
 
 
 def potential_electron_electron(r_ee: jnp.ndarray) -> jnp.ndarray:

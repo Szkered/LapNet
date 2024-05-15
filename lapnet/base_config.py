@@ -65,7 +65,7 @@ def default() -> ml_collections.ConfigDict:
           'local_energy_outlier_width': 20.0,
           # split the local energy into pieces to save memory
           'el_partition_num': 0,
-          'forward_laplacian': True,
+          'forward_laplacian': False,
           'lr': {
               'warmup': 0,
               'rate': 0.05,  # learning rate
@@ -205,7 +205,7 @@ def default() -> ml_collections.ConfigDict:
       },
       'pretrain': {
           'method': 'hf',  # Method is one of 'hf', or 'direct_init'.
-          'iterations': 5000,  # Only used if method is 'hf'.
+          'iterations': 50,  # Only used if method is 'hf'.
           'basis': 'ccpvdz',
           'use_hf_sample': True,
           'optim':'lamb',  # adam or lamb
